@@ -1,0 +1,49 @@
+{
+  "name": "error-san",
+  "version": "0.1.0",
+  "description": "Typed error handling: declare, throw, done.",
+  "keywords": [
+    "typescript",
+    "error-handling",
+    "typed-errors",
+    "result"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gohagoji/error-san.git"
+  },
+  "homepage": "https://github.com/gohagoji/error-san",
+  "bugs": "https://github.com/gohagoji/error-san/issues",
+  "type": "module",
+  "scripts": {
+    "prebuild": "node --eval \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
+    "build": "tsc --project tsconfig.build.json",
+    "test": "vitest --typecheck",
+    "lint": "biome check --error-on-warnings",
+    "prepack": "pnpm build"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "CHANGELOG.md"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.5",
+    "@biomejs/biome": "2.5.3",
+    "publint": "^0.3.22",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
+  },
+  "packageManager": "pnpm@11.17.0+sha512.cca3cea332ad254bb84145f966d19f4879615210346fc92c79a047f23a0d7b3cca3c3792f0076ba1f1831d277efbcf0a9119b31a9a60eca7fb3d6231f331ef72"
+}

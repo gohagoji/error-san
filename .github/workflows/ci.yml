@@ -1,0 +1,169 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: "26.x"
+  TARBALL: package.tgz
+
+jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Build and pack
+        run: pnpm pack --out "${RUNNER_TEMP}/${TARBALL}"
+
+      - name: Check tarball contents
+        run: |
+          tar -xzf "${RUNNER_TEMP}/${TARBALL}" -C "${RUNNER_TEMP}"
+          test -s "${RUNNER_TEMP}/package/dist/index.js"
+          test -s "${RUNNER_TEMP}/package/dist/index.d.ts"
+
+      - name: Upload tarball
+        uses: actions/upload-artifact@v7
+        with:
+          name: package-tarball
+          path: ${{ runner.temp }}/${{ env.TARBALL }}
+          if-no-files-found: error
+          retention-days: 7
+
+  test:
+    name: Test (Node.js ${{ matrix.node-version }})
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version:
+          - "22.x"
+          - "24.x"
+          - "26.x"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Test
+        run: pnpm test --run
+
+      - name: Download tarball
+        uses: actions/download-artifact@v8
+        with:
+          name: package-tarball
+          path: ${{ runner.temp }}
+
+      # Installs the tarball outside the repository so that `error-san` resolves
+      # the way a consumer's would: through the published `exports` map rather
+      # than a relative path into `dist` or a self-reference to this package.
+      - name: Smoke test packed package
+        working-directory: ${{ runner.temp }}
+        run: |
+          mkdir -p smoke
+          cd smoke
+
+          cat > package.json <<'MANIFEST'
+          { "name": "error-san-smoke-test", "private": true, "type": "module" }
+          MANIFEST
+
+          npm install --no-audit --no-fund "${RUNNER_TEMP}/${TARBALL}"
+
+          node --input-type=module <<'SMOKE'
+          import assert from "node:assert/strict";
+          import { UnexpectedError, wrapAsync, wrapSync } from "error-san";
+
+          assert.equal(wrapSync.try(() => 42)().unwrap(), 42);
+          assert.equal((await wrapAsync.try(async () => 42)()).unwrap(), 42);
+
+          const reason = new Error("smoke test");
+          const failure = wrapSync.try(() => {
+            throw reason;
+          })();
+
+          assert.equal(failure.isOk, false);
+          assert.equal(failure.code, "UnexpectedError");
+          assert.equal(failure.reason, reason);
+          assert.throws(
+            () => failure.unwrap(),
+            (error) =>
+              error instanceof UnexpectedError && error.reason === reason,
+          );
+          SMOKE
+
+  package:
+    name: Validate package
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download tarball
+        uses: actions/download-artifact@v8
+        with:
+          name: package-tarball
+          path: ${{ runner.temp }}
+
+      - name: Validate package
+        run: |
+          pnpm exec publint --strict "${RUNNER_TEMP}/${TARBALL}"
+          pnpm exec attw "${RUNNER_TEMP}/${TARBALL}" --profile esm-only --entrypoints .
