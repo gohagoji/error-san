@@ -20,8 +20,7 @@
     "prebuild": "node --eval \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
     "build": "tsc --project tsconfig.build.json",
     "test": "vitest --typecheck",
-    "lint": "biome check --error-on-warnings",
-    "prepack": "pnpm build"
+    "lint": "biome check --error-on-warnings"
   },
   "exports": {
     ".": {
