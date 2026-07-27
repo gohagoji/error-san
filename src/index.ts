@@ -130,7 +130,12 @@ type ResultError<PossibleErrors extends ErrorMap> = {
     : ExpectedError<Code, PublicReason<PossibleErrors[Code]>>;
 }[ErrorCode<PossibleErrors>];
 
-/** The three unwrap forms shared by all result variants. */
+/**
+ * The three unwrap forms shared by all result variants.
+ *
+ * The exhaustive-map overload precedes the catch-all overload so editors
+ * contextualize object literals as handler maps and suggest their error codes.
+ */
 interface Unwrap<Data, PossibleErrors extends ErrorMap> {
   /**
    * Returns success data or throws an {@link UnexpectedError}.
@@ -145,29 +150,6 @@ interface Unwrap<Data, PossibleErrors extends ErrorMap> {
    * ```
    */
   (): Data;
-
-  /**
-   * Returns success data or passes the retained error to a fallback.
-   *
-   * @typeParam Fallback - The callback's output type.
-   * @param onError - Receives the exact `Error` retained by the result.
-   * @returns The success data or the fallback's output.
-   *
-   * @remarks
-   * The fallback's output is returned as-is, without awaiting promises. Any
-   * value it throws escapes unchanged.
-   *
-   * @example
-   * ```ts
-   * const value = result.unwrap((error) => {
-   *   console.error(error);
-   *   return null;
-   * });
-   * ```
-   */
-  <Fallback>(
-    onError: (error: ResultError<PossibleErrors>) => Fallback,
-  ): Data | Fallback;
 
   /**
    * Returns success data or runs the handler for the active error code.
@@ -193,6 +175,29 @@ interface Unwrap<Data, PossibleErrors extends ErrorMap> {
   <Handlers extends ExhaustiveHandlers<PossibleErrors>>(
     handlers: ExactKeys<Handlers, ErrorCode<PossibleErrors>>,
   ): Data | HandlerOutputs<Handlers>;
+
+  /**
+   * Returns success data or passes the retained error to a fallback.
+   *
+   * @typeParam Fallback - The callback's output type.
+   * @param onError - Receives the exact `Error` retained by the result.
+   * @returns The success data or the fallback's output.
+   *
+   * @remarks
+   * The fallback's output is returned as-is, without awaiting promises. Any
+   * value it throws escapes unchanged.
+   *
+   * @example
+   * ```ts
+   * const value = result.unwrap((error) => {
+   *   console.error(error);
+   *   return null;
+   * });
+   * ```
+   */
+  <Fallback>(
+    onError: (error: ResultError<PossibleErrors>) => Fallback,
+  ): Data | Fallback;
 }
 
 /** Selects required handlers whose values always prove recovery. */

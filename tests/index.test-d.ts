@@ -616,6 +616,13 @@ test("types every unwrap form", () => {
   const bareValue = declaredResult.unwrap();
   expectTypeOf(bareValue).toEqualTypeOf<number>();
 
+  // Keep the catch-all signature last so the preceding object overload drives
+  // contextual property completion for exhaustive handler literals.
+  const lastUnwrapArgument: Parameters<typeof declaredResult.unwrap>[0] = (
+    error,
+  ) => error;
+  void lastUnwrapArgument;
+
   const exhaustivelyUnwrapped = declaredResult.unwrap({
     NotFoundError: () => null,
     OptionalError: (reason) => {
@@ -650,8 +657,8 @@ test("types every unwrap form", () => {
   expectTypeOf(subclassSentinelValue).toEqualTypeOf<number>();
 
   if (includeNegativeTypeTests()) {
-    // @ts-expect-error Exhaustive unwrap requires every possible error code.
     declaredResult.unwrap({
+      // @ts-expect-error Exhaustive unwrap requires every possible error code.
       NotFoundError: () => null,
       OptionalError: () => null,
       UnexpectedError,
