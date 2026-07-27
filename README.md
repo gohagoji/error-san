@@ -607,14 +607,9 @@ v0.1 does not support generators, async iterators, typed error propagation,
 runtime reason validation, or general Result methods such as `map` and
 `andThen`.
 
-## Development
+## Contributing
 
-```sh
-pnpm install
-pnpm test  # vitest, runtime + type-level tests
-pnpm lint  # biome
-pnpm build # emits ESM + declarations to dist/
-```
+See [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 
 ## License
 
