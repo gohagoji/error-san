@@ -224,8 +224,8 @@ const user = result.unwrap({
 The map must contain exactly one key per code. Missing or extra keys are type
 errors, so contract changes point to every map that needs updating.
 
-Only the map's own properties count. Inherited handlers are ignored; a missing
-or invalid handler makes `unwrap` throw `TypeError`.
+A missing, inherited, or invalid handler for the failing code makes `unwrap`
+throw `TypeError`.
 
 `UnexpectedError` can also be used as a handler that throws. A compatible
 concrete subclass chooses another error class. Because these handlers never
@@ -283,8 +283,8 @@ How it behaves:
 - A function handler turns a matching error into a new success result.
 - Success and unhandled errors return the _same_ result object unchanged.
 - A required handler removes its code unless its type includes `undefined`.
-- `undefined` and inherited entries are ignored; other invalid own entries
-  throw `TypeError`.
+- `undefined` and inherited entries are ignored; an invalid own entry for the
+  failing code throws `TypeError`.
 - The `UnexpectedError` sentinel rules match `unwrap(map)`.
 - Thrown values escape unchanged. Async output is stored as success data.
 

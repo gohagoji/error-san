@@ -232,7 +232,7 @@ interface Handle<Data, PossibleErrors extends ErrorMap> {
    * @param handlers - Own handlers for the selected error codes.
    * @returns The original success or unhandled failure, or a new success
    * containing the matching handler's output.
-   * @throws `TypeError` for an invalid, defined own handler.
+   * @throws `TypeError` for the active code's invalid, defined own handler.
    *
    * @remarks
    * A required handler removes its code unless its type includes `undefined`.

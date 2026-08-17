@@ -1102,6 +1102,29 @@ test("unwrap requires own handlers, rejects malformed maps, and never catches ha
   // An explicit undefined argument is a malformed map, not a bare unwrap.
   expect(() => runtimeUnwrap(undefined)).toThrow(TypeError);
 
+  // Entries for codes other than the active one are never read or validated.
+  const untouchedEntryReads = vi.fn(() => null);
+  const lazyMap = Object.defineProperty(
+    { PayloadError: () => "lazily validated" },
+    "UnexpectedError",
+    { enumerable: true, get: untouchedEntryReads },
+  );
+
+  expect(runtimeUnwrap(lazyMap)).toBe("lazily validated");
+  expect(untouchedEntryReads).not.toHaveBeenCalled();
+
+  // A callable argument selects the catch-all form despite handler properties.
+  const retainedError = result.unwrap((error) => error);
+  const handlerPropertyReads = vi.fn(() => null);
+  const callableMap = Object.defineProperty(
+    (error: unknown) => error,
+    "PayloadError",
+    { enumerable: true, get: handlerPropertyReads },
+  );
+
+  expect(runtimeUnwrap(callableMap)).toBe(retainedError);
+  expect(handlerPropertyReads).not.toHaveBeenCalled();
+
   const mapHandlerError = new Error("map handler failed");
   const catchAllError = new Error("catch-all handler failed");
 
@@ -1241,6 +1264,16 @@ test("handle ignores undefined, rejects other invalid matches, and preserves han
   expect(() =>
     runtimeHandle({ PayloadError: StructuralUnexpectedError }),
   ).toThrow(TypeError);
+
+  // Entries for codes other than the active one are never read or validated.
+  const untouchedEntryReads = vi.fn(() => null);
+  const unhandledMap = Object.defineProperty({}, "UnexpectedError", {
+    enumerable: true,
+    get: untouchedEntryReads,
+  });
+
+  expect(runtimeHandle(unhandledMap)).toBe(failure);
+  expect(untouchedEntryReads).not.toHaveBeenCalled();
 
   const handlerError = new Error("handler failed");
   expect(
