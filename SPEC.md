@@ -206,7 +206,7 @@ When a handler selects a sentinel class:
 
 ## 6. `unwrap`
 
-`unwrap` has three forms and never awaits handlers.
+`unwrap` has three forms and never awaits handlers. On failure, the argument picks the form: none is bare, a callable is the catch-all, and anything else is a handler map.
 
 ### Bare `result.unwrap()`
 
@@ -222,7 +222,7 @@ The handler map must contain exactly one entry for every error in the result typ
 - A function receives its code's public `reason`.
 - An `UnexpectedError` sentinel follows section 5 and contributes `never`.
 - The return type combines the success type with every function handler's output. Promise outputs are included as-is.
-- Only own properties count. A missing or invalid handler throws `TypeError`; inherited properties are ignored.
+- Only the current `code`'s own entry is read; a missing, inherited, or invalid entry throws `TypeError`.
 
 ### Catch-all `result.unwrap(onError)`
 
@@ -237,7 +237,7 @@ The callback receives the retained error: the native declared error or the retai
 - A function receives its code's public `reason` and returns a new success result with its output as `data`.
 - A sentinel follows section 5 and does not return.
 - A required handler removes its code unless its type includes `undefined`.
-- `undefined` and inherited entries are ignored; any other invalid own entry throws `TypeError`.
+- Only the current `code`'s own entry is read: `undefined` and inherited entries are ignored, and any other invalid entry throws `TypeError`.
 - A throwing handler escapes unchanged; `handle` is not an error boundary.
 - Async handler output is stored as data and is not awaited.
 
