@@ -39,7 +39,7 @@
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.5",
-    "@biomejs/biome": "2.5.7",
+    "@biomejs/biome": "2.5.10",
     "publint": "^0.3.22",
     "typescript": "^7.0.2",
     "vitest": "^4.1.10"
