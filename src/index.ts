@@ -61,7 +61,7 @@ declare const unexpectedErrorBrand: unique symbol;
  */
 export class UnexpectedError extends Error {
   /** Prevents unrelated structural lookalikes from acting as sentinels. */
-  private declare readonly [unexpectedErrorBrand]: never;
+  declare private readonly [unexpectedErrorBrand]: never;
 
   /** The code used for the universal unexpected failure branch. */
   readonly code = "UnexpectedError" as const;
